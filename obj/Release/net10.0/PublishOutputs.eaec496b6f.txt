@@ -1,0 +1,9 @@
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/TestDataServer
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/appsettings.Development.json
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/appsettings.json
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/TestDataServer.dll
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/TestDataServer.deps.json
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/TestDataServer.runtimeconfig.json
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/TestDataServer.pdb
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/Microsoft.AspNetCore.OpenApi.dll
+/home/durgle/TestDataServer/bin/Release/net10.0/publish/Microsoft.OpenApi.dll
