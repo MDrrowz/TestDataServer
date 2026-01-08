@@ -41,6 +41,10 @@ public class DataItem
 public static class DataStore
 {
 	public static ConcurrentDictionary<string, int> Data = new();
+	public static int Count()	
+	{
+	    return Data.Count;
+	}
 }
 
 // ===== Controller =====
@@ -114,7 +118,7 @@ public class DataController : ControllerBase
     {
         try
         {
-            if (DataStore.Count == 0)
+            if (DataStore.Count() == 0)
             {
                 return Conflict(new
                 {                

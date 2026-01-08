@@ -31,3 +31,4 @@
 /home/durgle/TestDataServer/obj/Release/net10.0/TestDataServer.pdb
 /home/durgle/TestDataServer/obj/Release/net10.0/TestDataServer.genruntimeconfig.cache
 /home/durgle/TestDataServer/obj/Release/net10.0/ref/TestDataServer.dll
+/home/durgle/TestDataServer/obj/Release/net10.0/TestDataServer.sourcelink.json
