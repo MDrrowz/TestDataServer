@@ -3,7 +3,6 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,16 +52,6 @@ public class DataItem
 {
     public string Key { get; set; } = "";
     public int Value { get; set; }
-}
-
-// ===== In-Memory Store =====
-public static class DataStore
-{
-	public static ConcurrentDictionary<string, int> Data = new();
-	public static int Count()	
-	{
-	    return Data.Count;
-	}
 }
 
 // ===== Controller =====
