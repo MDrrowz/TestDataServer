@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-public class AppDbContext : DbContext
+public class TestServerDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public TestServerDbContext(DbContextOptions<TestServerDbContext> options) : base(options) { }
 
     // This represents your table in SQLite
     public DbSet<DataItem> DataItems => Set<DataItem>();

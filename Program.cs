@@ -2,6 +2,7 @@
 // non-persistent storage of data
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,9 +13,20 @@ builder.WebHost.UseKestrel(options =>
 	options.Listen(System.Net.IPAddress.Any, 5000);
 });
 
+// Register SQlite TestServerDbContext
+builder.Services.AddDbContext<TestServerDbContext>(options =>
+    options.UseSqlite("Data Source=TestServerData.db"));
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// automatically create the db file if it doesn't exist
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<TestServerDbContext>();
+    db.Database.EnsureCreated();
+}
 
 // handles exceptions globally
 app.UseExceptionHandler(exceptionHandlerApp =>
@@ -31,11 +43,10 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 });
 
 // Health Check
-app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine} HI DRAKE AND SHELLY! Have fun down under!{Environment.NewLine}"));
+app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine}"));
 
 app.MapControllers();
 app.Run();
-
 
 // ===== Models =====
 public class DataItem
@@ -59,15 +70,17 @@ public static class DataStore
 [Route("api/data")]
 public class DataController : ControllerBase
 {
+    private readonly TestServerDbContext _context;
     private readonly ILogger<DataController> _logger;
 
-    public DataController(ILogger<DataController> logger)
+    public DataController(TestServerDbContext context, ILogger<DataController> logger)
     {
+        _context = context;
         _logger = logger;
     }
 
     [HttpPost]
-    public IActionResult Upload(DataItem item)
+    public async Task<IActionResult> Upload(DataItem item)
     {
         if (string.IsNullOrWhiteSpace(item.Key))
         {
@@ -76,7 +89,7 @@ public class DataController : ControllerBase
         }
         
         // Error out if key already exists
-        if (DataStore.Data.ContainsKey(item.Key))
+        if (await _context.DataItems.AnyAsync(d => d.Key == item.Key))
         {
             _logger.LogWarning(
                 "Upload rejected: duplicate key. Key={Key}, From={IP}",
@@ -91,7 +104,8 @@ public class DataController : ControllerBase
             });
         }
 
-        DataStore.Data[item.Key] = item.Value;
+        _context.DataItems.Add(item);
+        await _context.SaveChangesAsync();
 
         _logger.LogInformation(
             "Data uploaded successfully: Key={Key}, Value={Value}, From={IP}",
@@ -105,9 +119,11 @@ public class DataController : ControllerBase
 
     // Return value linked with specified key
     [HttpGet("{key}")]
-    public IActionResult Get(string key)
+    public async Task<IActionResult> Get(string key)
     {
-        if (!DataStore.Data.TryGetValue(key, out int value))
+        var item = await _context.DataItems.FindAsync(key);
+
+        if (item == null)
         {
             _logger.LogWarning(
                 "Data requested but not found: Key={Key}", 
@@ -116,16 +132,18 @@ public class DataController : ControllerBase
             return NotFound();
         }
 
-        return Ok(new DataItem { Key = key, Value = value });
+        return Ok(item);
     }
     
     // Return list of all keys and values
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {
         try
         {
-            if (DataStore.Count() == 0)
+            var allData = await _context.DataItems.ToListAsync();
+
+            if (allData.Count == 0)
             {
                 return Conflict(new
                 {                
@@ -133,11 +151,6 @@ public class DataController : ControllerBase
                 });
             }
             
-            var allData = DataStore.Data.Select(kvp => new DataItem
-            {
-                Key = kvp.Key,
-                Value = kvp.Value
-            }).ToList();
             _logger.LogInformation("All data retrieved. Count: {Count}", allData.Count);
             return Ok(allData);         
         }
