@@ -5,6 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// explicitly configure Kestrel endpoints
+builder.WebHost.UseKestrel(options =>
+{
+	options.Listen(System.Net.IPAddress.Any, 5000);
+});
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -24,7 +31,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 });
 
 // Health Check
-app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine}"));
+app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine} HI DRAKE AND SHELLY! Have fun down under!{Environment.NewLine}"));
 
 app.MapControllers();
 app.Run();

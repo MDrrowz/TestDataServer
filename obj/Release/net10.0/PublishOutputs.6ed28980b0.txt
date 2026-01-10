@@ -1,9 +1,0 @@
-/opt/TestDataServerv0/TestDataServer
-/opt/TestDataServerv0/appsettings.Development.json
-/opt/TestDataServerv0/appsettings.json
-/opt/TestDataServerv0/TestDataServer.dll
-/opt/TestDataServerv0/TestDataServer.deps.json
-/opt/TestDataServerv0/TestDataServer.runtimeconfig.json
-/opt/TestDataServerv0/TestDataServer.pdb
-/opt/TestDataServerv0/Microsoft.AspNetCore.OpenApi.dll
-/opt/TestDataServerv0/Microsoft.OpenApi.dll
