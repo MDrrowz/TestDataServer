@@ -1,3 +1,5 @@
+// SQLite Database Context
+
 using Microsoft.EntityFrameworkCore;
 public class TestServerDbContext : DbContext
 {
