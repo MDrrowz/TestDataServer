@@ -1,10 +1,46 @@
+// SERVER
+// Test Data Server Program
+
 // Chatgpt test data server program
 // non-persistent storage of data
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+// 1. Define a Secret Key (In production, use User Secrets or Environment Variables)
+const string jwtKey = "Your_Super_Secret_Key_At_Least_32_Chars_Long";
+var key = Encoding.ASCII.GetBytes(jwtKey);
+
+// 2. Add Authentication Services
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 
 // explicitly configure Kestrel endpoints
 builder.WebHost.UseKestrel(options =>
@@ -43,6 +79,9 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
 // Health Check
 app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine}"));
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
@@ -149,4 +188,53 @@ public class DataController : ControllerBase
             return StatusCode(500, "Internal error while fetching data.");
         }
     }
+	
+	// Delete key value pair
+	[HttpDelete("{key}")]
+    [Authorize(Policy = "AdminOnly")]
+	public async Task<IActionResult> Delete(string key)
+	{
+		var item = await _context.DataItems.FindAsync(key);
+		if (item == null) return NotFound();
+
+		_context.DataItems.Remove(item);
+		await _context.SaveChangesAsync();
+		return Ok();
+	}
+}
+
+[Route("api/auth")]
+public class AuthController : ControllerBase
+{
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] AdminLoginRequest request)
+    {
+        if (request.Password == "TDSAdminPass123!")
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes("Your_Super_Secret_Key_At_Least_32_Chars_Long");
+
+            var claims = new[] 
+            { 
+                new Claim(ClaimTypes.Name, "AdminUser"),
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, "Admin") }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return Ok(new { Token = tokenHandler.WriteToken(token) });
+        }
+
+        return Unauthorized();
+    }
+}
+
+public class AdminLoginRequest
+{
+    public string Password { get; set; } = "";
 }
