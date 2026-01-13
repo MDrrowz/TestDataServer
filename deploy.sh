@@ -2,6 +2,7 @@
 
 # Configuration
 PROJECT_DIR="/home/durgle/TestDataServer"
+TEMP_DIR="/tmp/TestDataServer_build"
 OUTPUT_DIR="/opt/TestDataServerV0"
 
 echo "Starting TestDataServer publishing script..."
@@ -13,7 +14,11 @@ fi
 
 echo "Publishing project..."
 
-sudo dotnet publish -c Release
+dotnet publish -c Release --artifacts-path "$TEMP_DIR"
+
+sudo rm -rf "$OUTPUT_DIR"/*
+sudo cp -r "$TEMP_DIR"/* "$OUTPUT_DIR"
+rm -rf "$TEMP_PUBLISH_DIR"
 
 sudo chown -R testserveruser:durgle "$OUTPUT_DIR"
 sudo chmod -R 755 "${OUTPUT_DIR:?error message}"

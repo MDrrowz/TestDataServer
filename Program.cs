@@ -1,9 +1,6 @@
 // SERVER
 // Test Data Server Program
 
-// Chatgpt test data server program
-// non-persistent storage of data
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,8 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
