@@ -21,23 +21,27 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; 
 })
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        RoleClaimType = "role",
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = false,
         ValidateAudience = false
     };
 });
+
+// 3. Add Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
-// explicitly configure Kestrel endpoints
+// Configure Kestrel to listen on port 5000
 builder.WebHost.UseKestrel(options =>
 {
 	options.Listen(System.Net.IPAddress.Any, 5000);
@@ -72,13 +76,20 @@ app.UseExceptionHandler(exceptionHandlerApp =>
     });
 });
 
-// Health Check
-app.MapGet("/health", () => Results.Content($"Service is running.{Environment.NewLine}"));
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
+// Debug route to list all registered endpoints
+if (true) // Set to false to disable in production
+{
+    app.MapGet("/debug/routes", (IEnumerable<EndpointDataSource> endpointSources) =>
+    {
+        var endpoints = endpointSources.SelectMany(es => es.Endpoints);
+        return Results.Ok(endpoints.Select(e => e.DisplayName));
+    });
+}
+
 app.Run();
 
 // ===== Models =====
@@ -88,7 +99,24 @@ public class DataItem
     public int Value { get; set; }
 }
 
-// ===== Controller =====
+public class AdminLoginRequest
+{
+    public string Password { get; set; } = "";
+}
+
+// ===== Controllers =====
+
+[ApiController]
+[Route("api/health")]
+public class HealthController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Check()
+    {
+        return Ok(new { status = $"Service is running.{Environment.NewLine}" });
+    }
+}
+
 [ApiController]
 [Route("api/data")]
 public class DataController : ControllerBase
@@ -198,9 +226,17 @@ public class DataController : ControllerBase
 	}
 }
 
+[ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    [HttpGet("ping")]
+    public IActionResult Ping() => Ok(new { message = "Pong" });
+
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
+    [HttpGet("check-admin")]
+    public IActionResult CheckAdmin() => Ok(new { authorized = true });
+
     [HttpPost("login")]
     public IActionResult Login([FromBody] AdminLoginRequest request)
     {
@@ -212,12 +248,12 @@ public class AuthController : ControllerBase
             var claims = new[] 
             { 
                 new Claim(ClaimTypes.Name, "AdminUser"),
-                new Claim(ClaimTypes.Role, "Admin")
+                new Claim("role", "Admin")
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, "Admin") }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -227,9 +263,4 @@ public class AuthController : ControllerBase
 
         return Unauthorized();
     }
-}
-
-public class AdminLoginRequest
-{
-    public string Password { get; set; } = "";
 }
