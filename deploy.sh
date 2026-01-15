@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-PROJECT_DIR="/home/durgle/TestDataServer/TestDataServer"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+PROJECT_DIR="$SCRIPT_DIR"
 PROJECT_FILE="TestDataServer.csproj"
 OUTPUT_DIR="/opt/TestDataServerV0"
 TEMP_DIR="/tmp/TestDataServer_publish"
