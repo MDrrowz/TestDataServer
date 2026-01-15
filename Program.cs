@@ -76,24 +76,6 @@ app.UseExceptionHandler(exceptionHandlerApp =>
     });
 });
 
-// Metadata endpoint
-// [ADD] during next server update to provide service info
-// verify position within server code
-// app.MapGet("/api/meta", () =>
-// {
-//     return Results.Ok(new
-//     {
-//         name = "TestDataServer",
-//         version = typeof(Program).Assembly.GetName().Version?.ToString(),
-//         buildTime = System.IO.File.GetLastWriteTimeUtc(
-//             typeof(Program).Assembly.Location
-//         ),
-//         environment = builder.Environment.EnvironmentName
-//     });
-// });
-
-
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -107,6 +89,20 @@ if (true) // Set to false to disable in production
         return Results.Ok(endpoints.Select(e => e.DisplayName));
     });
 }
+
+// Metadata endpoint
+app.MapGet("/api/meta", () =>
+{
+    return Results.Ok(new
+    {
+        name = "TestDataServer",
+        version = typeof(Program).Assembly.GetName().Version?.ToString(),
+        buildTime = System.IO.File.GetLastWriteTimeUtc(
+            typeof(Program).Assembly.Location
+        ),
+        environment = builder.Environment.EnvironmentName
+    });
+});
 
 app.Run();
 
@@ -131,15 +127,9 @@ public class HealthController : ControllerBase
     [HttpGet]
     public IActionResult Check()
     {
-        return Ok(new { status = $"Service is running.{Environment.NewLine}" });
+        return Content("Service is running.\n", "text/plain");
     }
 }
-// [REPLACE] with corrected endpoint during next server update to test plain text response
-// [HttpGet]
-// public IActionResult Check()
-// {
-//     return Content("Service is running.\n", "text/plain");
-// }
 
 [ApiController]
 [Route("api/data")]
