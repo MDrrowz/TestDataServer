@@ -38,7 +38,7 @@ builder.Services.AddAuthentication(options =>
 // 3. Add Authorization Policies
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "Admin"));
 });
 
 // Configure Kestrel to listen on port 5000
@@ -49,7 +49,7 @@ builder.WebHost.UseKestrel(options =>
 
 // Register SQlite TestServerDbContext
 builder.Services.AddDbContext<TestServerDbContext>(options =>
-    options.UseSqlite("Data Source=TestServerData.db"));
+    options.UseSqlite("Data Source=/opt/TestDataServerV0/TestServerData.db"));
 
 builder.Services.AddControllers();
 
@@ -75,6 +75,24 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         });
     });
 });
+
+// Metadata endpoint
+// [ADD] during next server update to provide service info
+// verify position within server code
+// app.MapGet("/api/meta", () =>
+// {
+//     return Results.Ok(new
+//     {
+//         name = "TestDataServer",
+//         version = typeof(Program).Assembly.GetName().Version?.ToString(),
+//         buildTime = System.IO.File.GetLastWriteTimeUtc(
+//             typeof(Program).Assembly.Location
+//         ),
+//         environment = builder.Environment.EnvironmentName
+//     });
+// });
+
+
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -116,6 +134,12 @@ public class HealthController : ControllerBase
         return Ok(new { status = $"Service is running.{Environment.NewLine}" });
     }
 }
+// [REPLACE] with corrected endpoint during next server update to test plain text response
+// [HttpGet]
+// public IActionResult Check()
+// {
+//     return Content("Service is running.\n", "text/plain");
+// }
 
 [ApiController]
 [Route("api/data")]
@@ -233,7 +257,7 @@ public class AuthController : ControllerBase
     [HttpGet("ping")]
     public IActionResult Ping() => Ok(new { message = "Pong" });
 
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
+    // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
     [HttpGet("check-admin")]
     public IActionResult CheckAdmin() => Ok(new { authorized = true });
 

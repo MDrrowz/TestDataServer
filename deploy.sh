@@ -1,31 +1,39 @@
 #!/bin/bash
+set -euo pipefail
 
-# Configuration
-PROJECT_DIR="/home/durgle/TestDataServer"
-TEMP_DIR="/tmp/TestDataServer_build"
+PROJECT_DIR="/home/durgle/TestDataServer/TestDataServer"
+PROJECT_FILE="TestDataServer.csproj"
 OUTPUT_DIR="/opt/TestDataServerV0"
+TEMP_DIR="/tmp/TestDataServer_publish"
 
-echo "Starting TestDataServer publishing script..."
+echo "Starting TestDataServer deployment..."
 
-if [ "$EUID" -ne 0 ]; then
-	echo "Re-run script with root privileges"
-	exit 1
+if [[ $EUID -ne 0 ]]; then
+  echo "Please run as root"
+  exit 1
 fi
 
+echo "Cleaning temp directory..."
+rm -rf "$TEMP_DIR"
+mkdir -p "$TEMP_DIR"
+
 echo "Publishing project..."
+dotnet publish "$PROJECT_DIR/$PROJECT_FILE" \
+  -c Release \
+  -o "$TEMP_DIR"
 
-dotnet publish -c Release --artifacts-path "$TEMP_DIR"
+echo "Stopping service..."
+systemctl stop TestDataServer
 
-sudo rm -rf "$OUTPUT_DIR"/*
-sudo cp -r "$TEMP_DIR"/* "$OUTPUT_DIR"
-rm -rf "$TEMP_PUBLISH_DIR"
+echo "Deploying files..."
+rm -rf "${OUTPUT_DIR:?}/"*
+cp -a "$TEMP_DIR"/. "$OUTPUT_DIR"/
 
-sudo chown -R testserveruser:durgle "$OUTPUT_DIR"
-sudo chmod -R 755 "${OUTPUT_DIR:?error message}"
+echo "Fixing ownership and permissions..."
+chown -R testserveruser:testserveruser "$OUTPUT_DIR"
+chmod -R 755 "$OUTPUT_DIR"
 
-echo "Reloading daemons and restarting TestDataServer..."
+echo "Starting service..."
+systemctl start TestDataServer
 
-sudo systemctl daemon-reload
-sudo systemctl restart TestDataServer
-
-echo "Script complete.  Project published to: $OUTPUT_DIR"
+echo "Deployment complete."
