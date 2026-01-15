@@ -229,13 +229,11 @@ public class DataController : ControllerBase
 	// Delete key value pair
 	[HttpDelete("{key}")]
     [Authorize(Policy = "AdminOnly")]
-
-    // Log the Authorization header for debugging
-    _logger.LogWarning("Authorization header: {Auth}",
-    Request.Headers.Authorization.ToString());
-
 	public async Task<IActionResult> Delete(string key)
 	{
+        // Log the Authorization header for debugging
+        _logger.LogWarning("Authorization header: {Auth}",
+        Request.Headers.Authorization.ToString());
 		var item = await _context.DataItems.FindAsync(key);
 		if (item == null) return NotFound();
 
