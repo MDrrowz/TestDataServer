@@ -229,6 +229,11 @@ public class DataController : ControllerBase
 	// Delete key value pair
 	[HttpDelete("{key}")]
     [Authorize(Policy = "AdminOnly")]
+
+    // Log the Authorization header for debugging
+    _logger.LogWarning("Authorization header: {Auth}",
+    Request.Headers.Authorization.ToString());
+
 	public async Task<IActionResult> Delete(string key)
 	{
 		var item = await _context.DataItems.FindAsync(key);
@@ -247,9 +252,11 @@ public class AuthController : ControllerBase
     [HttpGet("ping")]
     public IActionResult Ping() => Ok(new { message = "Pong" });
 
-    // [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "AdminOnly")]
+    [Authorize(Policy = "AdminOnly")]
     [HttpGet("check-admin")]
-    public IActionResult CheckAdmin() => Ok(new { authorized = true });
+    public IActionResult CheckAdmin() =>
+        Ok(new { authorized = true });
+
 
     [HttpPost("login")]
     public IActionResult Login([FromBody] AdminLoginRequest request)
