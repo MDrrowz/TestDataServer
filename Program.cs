@@ -25,6 +25,8 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+	options.MapInboundClaims = false;
+	
     options.TokenValidationParameters = new TokenValidationParameters
     {
         RoleClaimType = "role",
@@ -49,7 +51,9 @@ builder.WebHost.UseKestrel(options =>
 
 // Register SQlite TestServerDbContext
 builder.Services.AddDbContext<TestServerDbContext>(options =>
-    options.UseSqlite("Data Source=/opt/TestDataServerV0/TestServerData.db"));
+    options.UseSqlite(builder.Configuration.GetConnectionString("TestServer")));
+// builder.Services.AddDbContext<TestServerDbContext>(options =>
+//     options.UseSqlite("Data Source=/opt/TestDataServerV0/TestServerData.db")); // old database path
 
 builder.Services.AddControllers();
 
@@ -234,6 +238,7 @@ public class DataController : ControllerBase
         // Log the Authorization header for debugging
         _logger.LogWarning("Authorization header: {Auth}",
         Request.Headers.Authorization.ToString());
+        
 		var item = await _context.DataItems.FindAsync(key);
 		if (item == null) return NotFound();
 
